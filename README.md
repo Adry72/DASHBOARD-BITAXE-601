@@ -1,18 +1,22 @@
-DASHBOARD-BITAXE-601
+🚀 DASHBOARD-BITAXE-601
 
-Multi-unit dashboard for monitoring Bitaxe 601 miners with real-time data, charts, CKPool support, Telegram alerts and Tailscale remote access.
+A modern, multi-unit dashboard for monitoring Bitaxe 601 miners with real-time data, session analytics, temperature monitoring, CKPool support, Telegram alerts and full compatibility with Tailscale for secure remote access.
 
-A complete monitoring system for up to 2 Bitaxe miners (601 Gamma / Ultra / DIY).
-Supports CKPool solo mining, external pool mining, Tailscale remote access, Telegram alerts, live charts, averages and automatic restarts.
+Supports up to 4 Bitaxe units (Gamma / Ultra / DIY).
+No database required. Fully standalone Flask backend.
 
 ⭐ Features
-Real-time Bitaxe telemetry
+📡 Real-time Bitaxe Telemetry
 
-Hashrate
+Hashrate (GH/s)
 
-Temperature / VR Temp
+Temperature (°C)
 
-Voltage, core voltage, frequency
+VR Temperature (°C)
+
+Voltage & Core Voltage
+
+Frequency (MHz)
 
 Fan speed
 
@@ -20,144 +24,140 @@ Shares accepted / rejected
 
 Stratum URL
 
-Additional features
+Per-unit SessionBest + BestDiff
 
-Averages panel (computed over full log duration)
+📊 Analytics & Charts
 
-Combined charts (hashrate + temperature + VRTemp)
+Real-time charts (hashrate + temps)
 
-SessionBest historical chart
+Averages calculated over the entire log session
 
-CKPool log live parsing (optional)
+SessionBest historical line chart
 
-One-click Bitaxe restart per unit
+Combined multi-metric charts for each Bitaxe
 
-Automatic Bitaxe restart every X hours
+🧰 Extra Tools
+
+One-click restart per Bitaxe
+
+Automatic system restart every X hours
 
 Automatic log rotation
 
-Telegram alert system
+CKPool log live parsing (optional)
 
-High temperature alert
+Fully Tailscale-ready (0.0.0.0 binding)
 
-New SessionBest alert
+Telegram alerts:
 
-Tailscale-ready remote dashboard
+High temperature
 
-Fully standalone (no database required)
+SessionBest improvement
 
 📦 Requirements
 
 Python 3.9+
 
-pip
-
 Flask
 
 requests
 
-Chart.js (via CDN)
+Chart.js (loaded via CDN)
 
-Up to 4 Bitaxe miners
+Bitaxe units on LAN or Tailscale
 
-(Optional) CKPool running locally
+Optional: CKPool running locally
 
-(Optional) Tailscale for remote access
+Install Python dependencies:
 
-📁 Project Structure
-dashboard_request.py       # Flask backend
-templates/index.html       # Main dashboard UI
-static/favicon.ico
-bitaxe_log.txt             # Auto-generated
-ckpool.log                 # Optional, auto-read for CKPool mode
+pip install flask requests
 
-⚙️ Configuration (dashboard_request.py)
+🗂️ Project Structure
+DASHBOARD-BITAXE-601/
+│
+├── dashboard_request.py       # Main Flask backend
+├── templates/
+│   └── index.html             # Dashboard UI
+├── static/
+│   └── favicon.ico            # UI icon
+├── screenshot data.jpg        # Screenshots
+├── screenshot real-time chart section.jpg
+├── screenshot sessionbest chart .jpg
+├── README.md
+├── LICENSE
+└── .gitignore
+
+⚙️ Configuration (inside dashboard_request.py)
+
+Edit the IP list for your Bitaxe units (Tailscale-friendly):
+
 BITAXE_IPS = [
     "100.100.100.1",
     "100.100.100.2",
     "100.100.100.3",
-    "100.100.100.4"
+    "100.100.100.4",
 ]
+
+
+Other optional parameters:
 
 LOGFILE = "bitaxe_log.txt"
 CKPOOL_LOG = "ckpool.log"
 DASHBOARD_PORT = 19150
 
 COLLECT_INTERVAL = 60
-DASHBOARD_REFRESH_REALTIME = 60
-DASHBOARD_REFRESH_MEDIUM = 60
-DASHBOARD_REFRESH_CHARTS = 60
-
 TEMP_ALERT = 60
 BITAXE_RESTART_EVERY_HOURS = 24
 
-
-You can freely add or remove IP addresses.
-
-🔔 Telegram Alerts
-
-The script uses environment variables.
-
-Linux/macOS:
-
-export TG_TOKEN="your_bot_token_here"
-export TG_CHAT_ID="your_chat_id_here"
+🔔 Telegram Alerts via environment variables
+export TG_TOKEN="your_bot_token"
+export TG_CHAT_ID="your_chat_id"
 
 
-Windows PowerShell:
+On Windows PowerShell:
 
-setx TG_TOKEN "your_bot_token_here"
-setx TG_CHAT_ID "your_chat_id_here"
-
-
-If variables are missing, Telegram alerts are automatically disabled.
-
-🌍 Tailscale Remote Access
-
-The dashboard listens on:
-
-0.0.0.0:19150
+setx TG_TOKEN "your_bot_token"
+setx TG_CHAT_ID "your_chat_id"
 
 
-With Tailscale running, access it remotely via:
+If the variables are missing, Telegram alerts are automatically disabled.
+
+🌍 Remote Access via Tailscale
+
+The dashboard binds to:
+
+http://0.0.0.0:19150
+
+
+➡️ This means you can access it from ANY Tailscale device:
 
 http://<TAILSCALE-IP>:19150
 
 
-Bitaxe units must be reachable via LAN or Tailscale.
+Bitaxe units must also be reachable via LAN or Tailscale.
 
 ⛏️ Mining Modes
 1. CKPool Solo Mining
 
-If running CKPool locally, place ckpool.log in the same directory.
-The dashboard will parse it automatically.
+If ckpool.log is present, the dashboard automatically parses it and displays mining stats.
 
-2. Pool Mining (External Pool)
+2. External Pool Mining
 
-No CKPool log needed.
-Dashboard shows:
+Dashboard works fully without CKPool:
 
-real-time stats
+real-time telemetry
+
+session bests
+
+charts
 
 averages
 
-combined charts
-
-SessionBest history
-
-▶️ Running the Dashboard
-
-Install dependencies:
-
-pip install flask requests
-
-
-Start:
-
+🖥️ Running the Dashboard
 python dashboard_request.py
 
 
-Open:
+Then open:
 
 http://localhost:19150
 
@@ -166,14 +166,21 @@ Or via Tailscale:
 
 http://<TAILSCALE-IP>:19150
 
-🔁 (Optional) systemd Service for Linux
+📸 Screenshots
+Averages Panel
 
-Create:
+![Averages](screenshot data.jpg)
 
+Real-Time Charts
+
+![Real-Time Charts](screenshot real-time chart section.jpg)
+
+SessionBest Chart
+
+![Session Best](screenshot sessionbest chart .jpg)
+
+🛠️ Optional: systemd Service (Linux)
 /etc/systemd/system/bitaxe-dashboard.service
-
-
-Content:
 
 [Unit]
 Description=Bitaxe Dashboard
@@ -181,7 +188,7 @@ After=network.target
 
 [Service]
 User=pi
-WorkingDirectory=/home/pi/bitaxe-dashboard
+WorkingDirectory=/home/pi/DASHBOARD-BITAXE-601
 ExecStart=/usr/bin/python3 dashboard_request.py
 Restart=always
 Environment=TG_TOKEN=your_token
@@ -191,7 +198,7 @@ Environment=TG_CHAT_ID=your_chat_id
 WantedBy=multi-user.target
 
 
-Enable:
+Enable it:
 
 sudo systemctl daemon-reload
 sudo systemctl enable bitaxe-dashboard
@@ -199,21 +206,18 @@ sudo systemctl start bitaxe-dashboard
 
 🤝 Contributing
 
-Pull Requests are welcome:
+Pull Requests welcome:
 
-UI improvements
+UI / CSS improvements
 
-Performance optimizations
+Additional metrics
+
+CKPool enhancements
 
 Bitaxe Ultra support
 
-Multi-pool integrations
+Multi-pool integration
 
-📜 License
+📄 License
 
-MIT License.
-
-👤 Author
-
-Dashboard designed for multi-unit Bitaxe monitoring using:
-Flask, Chart.js, Telegram Bot API, Tailscale networking.
+Released under the MIT License.
