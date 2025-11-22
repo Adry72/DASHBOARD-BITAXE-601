@@ -44,6 +44,17 @@ No database required. Fully standalone **Flask** backend.
 - Optional CKPool
 - Optional Tailscale
 
+## 📸 Screenshots
+
+### 🔹 Averages Panel
+![Averages](./screenshot%20data.jpg)
+
+### 🔹 Real-Time Chart Section
+![Real-Time Charts](./screenshot%20real-time%20chart%20section.jpg)
+
+### 🔹 SessionBest Chart
+![SessionBest](./screenshot%20sessionbest%20chart%20.jpg)
+
 ## 🗂️ Project Structure
 
 ```
