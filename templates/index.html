@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bitaxe Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #fafafa;
+            margin: 20px;
+        }
+        h2 { color: #12306a; }
+        .chart-block { background: #fff; padding: 20px; border-radius: 18px; box-shadow: 0 2px 12px #aaa2; margin-top: 30px; }
+        .graph-title { margin: 16px 0 6px 10px; font-size: 1.12em; color: #12306a; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+        th { background-color: #e0e0e0; }
+        .config-note { background: #ffe; color: #a65; border: 1px solid #edb; border-radius: 10px; margin-bottom: 20px; padding: 8px 16px;}
+    </style>
+</head>
+
+<body>
+    <h2>Bitaxe Dashboard</h2>
+
+<!-- ================= RESET BUTTONS ================= -->
+
+<div style="background: #f4f6fc; padding: 16px 20px; margin: 15px 0 30px 0; border-radius: 12px; box-shadow: 0 2px 7px #bcd;">
+    <b>Reset Bitaxe:</b>
+    {% for ip in ips %}
+      <button onclick="resetBitaxe('{{ ip }}')" style="margin: 0 10px 0 0; background:#efefef; border:1.5px solid #adc; padding: 10px 24px; border-radius:10px; color:#222; cursor:pointer; font-size: 1.15em; font-weight: 500;">
+        {{ ip }}
+      </button>
+    {% endfor %}
+</div>
+
+<script>
+function resetBitaxe(ip) {
+    if (!confirm('Confirm reset of: ' + ip + '?')) return;
+
+    fetch('/reset-bitaxe/' + encodeURIComponent(ip), { method: 'POST' })
+    .then(res => res.json())
+    .then(data => alert(data.msg))
+    .catch(err => alert('Error: ' + err));
+}
+</script>
+
+<!-- ================= CKPOOL STATUS ================= -->
+
+<div style="
+    display: flex;
+    align-items: center;
+    background: #e6f7ec;
+    border: 1.5px solid #3ea97f;
+    border-radius: 11px;
+    margin: 20px 0 15px 0;
+    padding: 12px 18px;
+    max-width: 1100px;
+    font-size: 1.3em;
+    box-shadow: 0 2px 8px #99d7b444;
+">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#28bb7a" style="margin-right: 10px;">
+        <circle cx="12" cy="12" r="10" fill="#28bb7a" />
+        <path d="M10 14l-3-3 1.4-1.4L10 11.2l5.6-5.6L17 7l-7 7z" fill="#fff"/>
+    </svg>
+
+    <div style="font-family:monospace; color:#16613e; font-weight:500;">
+        <span style="color:#287d57;">CKPool status:</span>
+        <span id="ckpool-status-text">Loading...</span>
+    </div>
+</div>
+
+<script>
+async function updateCkpoolStatus() {
+    try {
+        const res = await fetch('/ckpool-status');
+        const data = await res.json();
+        document.getElementById('ckpool-status-text').innerText = data.status;
+    } catch {
+        document.getElementById('ckpool-status-text').innerText = "Unavailable";
+    }
+}
+setInterval(updateCkpoolStatus, 5000);
+updateCkpoolStatus();
+</script>
+
+<!-- ================= CONFIG NOTE ================= -->
+
+<div class="config-note">
+    <b>Real time refresh:</b> {{ DASHBOARD_REFRESH_REALTIME }} sec |
+    <b>Averages refresh:</b> {{ DASHBOARD_REFRESH_MEDIE }} sec |
+    <b>Charts refresh:</b> {{ DASHBOARD_REFRESH_GRAFICI }} sec
+</div>
+
+<!-- ================= AVERAGE TABLE ================= -->
+
+<div class="chart-block">
+    <div style="font-weight: bold; font-size: 1.2em; margin-bottom: 10px;">Latest Average Data</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Bitaxe (IP)</th>
+                <th>Avg Hashrate (GH/s)</th>
+                <th>Max Hashrate</th>
+                <th>Avg Temp (°C)</th>
+                <th>Avg VRTemp (°C)</th>
+                <th>Duration</th>
+            </tr>
+        </thead>
+        <tbody id="medie-table-body">
+            {% for ip in ips if ip in averages %}
+            <tr>
+                <td>{{ ip }}</td>
+                <td>{{ averages[ip].hashrate }}</td>
+                <td>{{ averages[ip].maxhashrate }}</td>
+                <td>{{ averages[ip].temp }}</td>
+                <td>{{ averages[ip].vrtemp }}</td>
+                <td>{{ duration }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ================= REAL TIME ================= -->
+
+<div class="chart-block">
+    <div style="font-weight: bold; font-size: 1.2em; margin-bottom: 10px;">Real Time Data</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Bitaxe</th>
+                <th>Hashrate</th>
+                <th>Temp (°C)</th>
+                <th>VRTemp (°C)</th>
+                <th>Accepted</th>
+                <th>Rejected</th>
+                <th>SessionBest</th>
+                <th>BestDiff</th>
+            </tr>
+        </thead>
+        <tbody id="data-table-body"></tbody>
+    </table>
+</div>
+
+<!-- ================= EXTRA INFO ================= -->
+
+<div class="chart-block">
+    <div style="font-weight: bold; font-size: 1.2em; margin-bottom: 10px;">Additional Bitaxe Info</div>
+
+    <table id="extra-table">
+        <thead>
+            <tr>
+                <th>Bitaxe (IP)</th>
+                <th>Frequency (MHz)</th>
+                <th>Core Voltage</th>
+                <th>Voltage</th>
+                <th>Stratum URL</th>
+                <th>Fan Speed (%)</th>
+            </tr>
+        </thead>
+        <tbody id="extra-table-body"></tbody>
+    </table>
+</div>
+
+<!-- ================= COLOR MAP UPDATED TO TAILSCALE ================= -->
+
+{% set color_map = {
+    '100.100.100.1': ('BITAXE 1', '#2ecc71'),
+    '100.100.100.2': ('BITAXE 2', '#3498db'),
+    '100.100.100.3': ('BITAXE 3', '#e67e22'),
+    '100.100.100.4': ('BITAXE 4', '#e74c3c')
+} %}
+
+{% for ip in ips %}
+<div class="chart-block">
+    <div style="
+        font-weight: bold;
+        font-size: 1.2em;
+        margin-bottom: 10px;
+        color: {{ color_map[ip][1] if ip in color_map else '#12306a' }};
+    ">
+        {{ color_map[ip][0] if ip in color_map else ip }}
+    </div>
+
+    <canvas id="combinedChart_{{ loop.index }}" height="140"></canvas>
+</div>
+{% endfor %}
+
+<!-- ================= SESSION BEST ================= -->
+
+<div class="chart-block">
+    <div style="font-weight: bold; font-size: 1.2em; margin-bottom: 10px;">Session Best</div>
+    <canvas id="sessionBestChart" height="80"></canvas>
+</div>
+
+<!-- ================= JAVASCRIPT BACKEND LOGIC ================= -->
+
+<script>
+const REFRESH_RT = {{ DASHBOARD_REFRESH_REALTIME }};
+const REFRESH_MEDIE = {{ DASHBOARD_REFRESH_MEDIE }};
+const REFRESH_GRAFICI = {{ DASHBOARD_REFRESH_GRAFICI }};
+
+let combinedCharts = [];
+const dataObj = {{ data|tojson }};
+const ips = {{ ips|tojson }};
+const originalData = JSON.parse(JSON.stringify(dataObj));
+
+async function updateLatestData() {
+    try {
+        const res = await fetch('/latest-data');
+        const d = await res.json();
+
+        const tbody = document.getElementById('data-table-body');
+        tbody.innerHTML = '';
+
+        for (const [ip, v] of Object.entries(d.latest)) {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${ip}</td>
+                    <td>${v.hashrate}</td>
+                    <td>${v.temp}</td>
+                    <td>${v.vrtemp}</td>
+                    <td>${v.accepted}</td>
+                    <td>${v.rejected}</td>
+                    <td>${v.sessionbest}</td>
+                    <td>${v.bestdiff}</td>
+                </tr>`;
+        }
+
+        const extraBody = document.getElementById('extra-table-body');
+        extraBody.innerHTML = '';
+
+        for (const [ip, v] of Object.entries(d.extra)) {
+            extraBody.innerHTML += `
+                <tr>
+                    <td>${ip}</td>
+                    <td>${v.frequency || ''}</td>
+                    <td>${v.coreVoltageActual || ''}</td>
+                    <td>${v.voltage || ''}</td>
+                    <td>${v.stratumURL || ''}</td>
+                    <td>${v.fanspeed || ''}</td>
+                </tr>`;
+        }
+    } catch (e) {
+        console.error("Error loading real-time data:", e);
+    }
+}
+
+async function updateMedieTable() {
+    try {
+        const res = await fetch('/medie-data');
+        const d = await res.json();
+
+        const tbody = document.getElementById('medie-table-body');
+        tbody.innerHTML = '';
+
+        for (const ip of d.ips) {
+            const m = d.averages[ip];
+            if (!m) continue;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${ip}</td>
+                    <td>${m.hashrate}</td>
+                    <td>${m.maxhashrate}</td>
+                    <td>${m.temp}</td>
+                    <td>${m.vrtemp}</td>
+                    <td>${d.duration}</td>
+                </tr>`;
+        }
+    } catch (e) {
+        console.error("Error loading averages:", e);
+    }
+}
+
+async function updateCombinedCharts() {
+    try {
+        const res = await fetch('/combined-data');
+        const d = await res.json();
+
+        d.ips.forEach((ip, idx) => {
+            const chart = combinedCharts[idx];
+
+            chart.data.labels = d.data[ip].time;
+            chart.data.datasets[0].data = d.data[ip].hashrate;
+            chart.data.datasets[1].data = d.data[ip].temp;
+            chart.data.datasets[2].data = d.data[ip].vrtemp;
+
+            chart.update();
+        });
+
+    } catch (e) {
+        console.error("Error updating chart:", e);
+    }
+}
+
+async function updateSessionBestChart() {
+    const res = await fetch('/sessionbest');
+    const hist = await res.json();
+
+    const labelsSet = new Set();
+    const datasets = [];
+
+    Object.values(hist).forEach(list => {
+        list.forEach(r => labelsSet.add(r.timestamp));
+    });
+
+    const labels = [...labelsSet].sort();
+
+    const colorMap = {
+        "100.100.100.1": "#2ecc71",
+        "100.100.100.2": "#3498db",
+        "100.100.100.3": "#e67e22",
+        "100.100.100.4": "#e74c3c"
+    };
+
+    Object.entries(hist).forEach(([ip, arr]) => {
+        const map = Object.fromEntries(arr.map(r => [r.timestamp, r.value]));
+
+        datasets.push({
+            label: ip,
+            data: labels.map(ts => map[ts] ?? null),
+            borderColor: colorMap[ip] || "black",
+            backgroundColor: colorMap[ip] || "black",
+            pointRadius: 0,
+            borderWidth: 2,
+            fill: false,
+            spanGaps: true,
+            tension: 0.18
+        });
+    });
+
+    const ctx = document.getElementById("sessionBestChart").getContext("2d");
+    if (window.sessionChart) window.sessionChart.destroy();
+
+    window.sessionChart = new Chart(ctx, {
+        type: "line",
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: "bottom" } },
+            scales: {
+                x: { title: { display: true, text: "Date / Time" }},
+                y: { title: { display: true, text: "Session Best" }}
+            }
+        }
+    });
+}
+
+function initCharts() {
+    ips.forEach((ip, idx) => {
+        const ctx = document.getElementById(`combinedChart_${idx+1}`).getContext("2d");
+
+        const chart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: dataObj[ip].time,
+                datasets: [
+                    { label: "Hashrate", data: dataObj[ip].hashrate, borderColor: "lightblue", pointRadius: 0 },
+                    { label: "Temp", data: dataObj[ip].temp, borderColor: "coral", pointRadius: 0 },
+                    { label: "VRTemp", data: dataObj[ip].vrtemp, borderColor: "orange", pointRadius: 0 }
+                ]
+            }
+        });
+
+        combinedCharts.push(chart);
+    });
+}
+
+initCharts();
+updateLatestData();
+updateMedieTable();
+updateSessionBestChart();
+
+setInterval(updateLatestData, REFRESH_RT * 1000);
+setInterval(updateMedieTable, REFRESH_MEDIE * 1000);
+setInterval(updateSessionBestChart, REFRESH_GRAFICI * 1000);
+setInterval(updateCombinedCharts, REFRESH_GRAFICI * 1000);
+</script>
+
+</body>
+</html>
