@@ -2,7 +2,7 @@ DASHBOARD-BITAXE-601
 
 Multi-unit dashboard for monitoring Bitaxe 601 miners with real-time data, charts, CKPool support, Telegram alerts and Tailscale remote access.
 
-A complete monitoring system for up to 4 Bitaxe miners (601 Gamma / Ultra / DIY).
+A complete monitoring system for up to 2 Bitaxe miners (601 Gamma / Ultra / DIY).
 Supports CKPool solo mining, external pool mining, Tailscale remote access, Telegram alerts, live charts, averages and automatic restarts.
 
 ⭐ Features
